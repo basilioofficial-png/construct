@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PrintLab — конструктор печати на одежде</title>
+  <meta name="description" content="Создайте свой дизайн: выберите изделие, цвет, загрузите картинку и оформите заказ печати.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="logo" href="./">Print<span>Lab</span></a>
+    <span class="topbar__hint">Конструктор печати</span>
+  </header>
+
+  <main class="layout">
+    <!-- ЛЕВАЯ ЧАСТЬ: превью изделия -->
+    <section class="preview" aria-label="Превью изделия">
+      <div class="preview__stage" id="stage">
+        <svg id="mockup" viewBox="0 0 400 460" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Макет изделия">
+          <defs>
+            <linearGradient id="shade" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#000" stop-opacity=".18"/>
+              <stop offset=".18" stop-color="#000" stop-opacity="0"/>
+              <stop offset=".5" stop-color="#fff" stop-opacity=".10"/>
+              <stop offset=".82" stop-color="#000" stop-opacity="0"/>
+              <stop offset="1" stop-color="#000" stop-opacity=".18"/>
+            </linearGradient>
+            <linearGradient id="shadeV" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff" stop-opacity=".08"/>
+              <stop offset="1" stop-color="#000" stop-opacity=".10"/>
+            </linearGradient>
+            <clipPath id="printClip"><rect id="printClipRect"/></clipPath>
+          </defs>
+          <g id="garment"></g>
+          <g clip-path="url(#printClip)">
+            <image id="designImg" preserveAspectRatio="xMidYMid meet" visibility="hidden"/>
+          </g>
+          <g id="garmentOverlay" pointer-events="none"></g>
+          <rect id="printArea" class="print-area" rx="4"/>
+        </svg>
+        <div class="preview__empty" id="previewEmpty">Выберите изделие, чтобы начать</div>
+      </div>
+      <div class="preview__caption" id="previewCaption"></div>
+    </section>
+
+    <!-- ПРАВАЯ ЧАСТЬ: шаги -->
+    <section class="panel" aria-label="Шаги оформления">
+      <ol class="stepper" id="stepper"></ol>
+
+      <div class="panel__body" id="stepBody"></div>
+
+      <footer class="panel__footer">
+        <div class="price">
+          <span class="price__label">Итого</span>
+          <span class="price__value" id="totalPrice">—</span>
+        </div>
+        <div class="nav">
+          <button class="btn btn--ghost" id="btnBack" type="button">Назад</button>
+          <button class="btn btn--primary" id="btnNext" type="button">Далее</button>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <!-- Данные (база изделий и цветов) и логика приложения -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
