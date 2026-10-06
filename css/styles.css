@@ -42,8 +42,7 @@ button { cursor: pointer; }
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
 }
-.logo { font-weight: 800; font-size: 22px; letter-spacing: -.02em; color: var(--text); text-decoration: none; }
-.logo span { color: var(--accent); }
+.logo { font-weight: 800; font-size: 22px; letter-spacing: .06em; color: var(--text); text-decoration: none; }
 .topbar__hint { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
 
 /* ===== Раскладка: превью слева, шаги справа ===== */

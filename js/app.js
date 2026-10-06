@@ -350,8 +350,9 @@ const views = {
         </dl>
         ${o.sendError ? `<p class="note note--warn">Не удалось отправить заказ на сервер: ${esc(o.sendError)}. Скачайте макет и свяжитесь с нами.</p>` : ''}
         <div class="done__actions">
+          <button type="button" class="btn btn--primary" data-action="downloadPdf">Скачать PDF</button>
           <button type="button" class="btn btn--ghost" data-action="download">Скачать макет PNG</button>
-          <button type="button" class="btn btn--primary" data-action="restart">Создать новый дизайн</button>
+          <button type="button" class="btn btn--ghost" data-action="restart">Создать новый дизайн</button>
         </div>
       </div>`;
   },
@@ -513,6 +514,7 @@ const actions = {
   fit() { state.place = { scale: 1, dx: 0, dy: 0 }; render(); },
   reset() { state.place = { scale: 0.8, dx: 0, dy: 0 }; render(); },
   download() { downloadPng(); },
+  downloadPdf() { downloadPdf(); },
   restart() {
     Object.assign(state, {
       step: 0, maxStep: 0, productId: null, colorId: null, image: null,
@@ -606,9 +608,9 @@ async function submitOrder() {
 
   // копия заказа (без картинки) остаётся в браузере
   try {
-    const saved = JSON.parse(localStorage.getItem('printlab_orders') || '[]');
+    const saved = JSON.parse(localStorage.getItem('pinhead_orders') || '[]');
     saved.push(order);
-    localStorage.setItem('printlab_orders', JSON.stringify(saved));
+    localStorage.setItem('pinhead_orders', JSON.stringify(saved));
   } catch (e) { /* хранилище недоступно — не страшно */ }
 
   state.order = order;
@@ -651,6 +653,25 @@ async function downloadPng() {
   } catch (e) {
     alert('Не удалось сохранить макет в этом браузере.');
   }
+}
+
+async function downloadPdf() {
+  const btn = document.querySelector('[data-action="downloadPdf"]');
+  btn.disabled = true;
+  btn.textContent = 'Готовим PDF…';
+  try {
+    const blob = await buildOrderPdf({ order: state.order, mockupSrc: await mockupPng(), designSrc: state.image.src });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pinhead-zakaz-${state.order.id}.pdf`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) {
+    alert('Не удалось сформировать PDF в этом браузере.');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Скачать PDF';
 }
 
 /* ---------- Кнопки «Назад» / «Далее» ---------- */
