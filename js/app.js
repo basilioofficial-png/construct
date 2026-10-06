@@ -39,14 +39,6 @@ const product = () => PRODUCTS.find((p) => p.id === state.productId) || null;
 const color = () => (state.colorId ? COLORS[state.colorId] : null);
 const shape = () => (state.productId ? SHAPES[state.productId] : null);
 
-function shadeHex(hex, amount) {
-  // amount < 0 — темнее, > 0 — светлее
-  const n = parseInt(hex.slice(1), 16);
-  const ch = (v) => Math.max(0, Math.min(255, Math.round(v + 255 * amount)));
-  const r = ch(n >> 16), g = ch((n >> 8) & 255), b = ch(n & 255);
-  return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
-}
-
 function isLight(hex) {
   const n = parseInt(hex.slice(1), 16);
   const r = n >> 16, g = (n >> 8) & 255, b = n & 255;
@@ -104,6 +96,78 @@ function printStats() {
   return { wCm, hCm, dpi: Math.round(dpi) };
 }
 
+/* ---------- Окрашивание фото изделия ---------- */
+
+/*
+ * Фото изделия хранится серым: яркость 128 = «основной цвет ткани»,
+ * темнее — складки и тени, светлее — блики. Для выбранного цвета
+ * умножаем цвет на эту яркость, поэтому складки и швы сохраняются.
+ * Готовые картинки кешируем, чтобы не считать их заново.
+ */
+const tintCache = {};   // 'tshirt|#FFFFFF' -> dataURL
+const shadeCache = {};  // 'tshirt' -> dataURL с тенями для принта
+const baseCache = {};   // 'tshirt' -> Promise<ImageData>
+
+function loadBase(id) {
+  if (!baseCache[id]) {
+    baseCache[id] = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(ctx.getImageData(0, 0, c.width, c.height));
+      };
+      img.onerror = reject;
+      // берём фото из js/blanks.js (работает и без сервера), иначе — файл
+      img.src = (typeof BLANK_IMAGES !== 'undefined' && BLANK_IMAGES[id]) || SHAPES[id].img;
+    });
+  }
+  return baseCache[id];
+}
+
+function pixelsToUrl(data, w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  c.getContext('2d').putImageData(new ImageData(data, w, h), 0, 0);
+  return c.toDataURL('image/png');
+}
+
+async function tintGarment(id, hex) {
+  const key = id + '|' + hex;
+  if (tintCache[key]) return;
+  const base = await loadBase(id);
+  const n = parseInt(hex.slice(1), 16);
+  const rgb = [n >> 16, (n >> 8) & 255, n & 255];
+  const src = base.data, out = new Uint8ClampedArray(src.length);
+  for (let i = 0; i < src.length; i += 4) {
+    const s = src[i] / 128;
+    for (let k = 0; k < 3; k++) {
+      const c = rgb[k];
+      out[i + k] = s <= 1 ? c * s : c + (255 - c) * (s - 1);
+    }
+    out[i + 3] = src[i + 3];
+  }
+  tintCache[key] = pixelsToUrl(out, base.width, base.height);
+
+  if (!shadeCache[id]) {
+    // только затемнения: их накладываем на картинку клиента «умножением»
+    const sh = new Uint8ClampedArray(src.length);
+    for (let i = 0; i < src.length; i += 4) {
+      const v = Math.min(255, src[i] * 2);
+      sh[i] = sh[i + 1] = sh[i + 2] = v;
+      sh[i + 3] = src[i + 3];
+    }
+    shadeCache[id] = pixelsToUrl(sh, base.width, base.height);
+  }
+}
+
+function setHref(el, url) {
+  el.setAttribute('href', url);
+  el.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', url);
+}
+
 /* ---------- Превью (SVG-макет) ---------- */
 
 const svg = $('#mockup');
@@ -111,25 +175,22 @@ const designImg = $('#designImg');
 
 function renderMockup() {
   const s = shape();
-  const c = color() || { hex: '#F2F2F2', name: '' };
   $('#previewEmpty').hidden = !!s;
   svg.style.visibility = s ? 'visible' : 'hidden';
   if (!s) { $('#previewCaption').textContent = ''; return; }
 
-  const fill = c.hex;
-  const dark = shadeHex(fill, isLight(fill) ? -0.06 : -0.05);
-  const line = isLight(fill) ? 'rgba(0,0,0,.16)' : 'rgba(255,255,255,.14)';
-  const sub = (str) => str.replace(/\{fill\}/g, fill).replace(/\{dark\}/g, dark).replace(/\{line\}/g, line);
-
-  $('#garment').innerHTML =
-    (s.back ? sub(s.back) : '') +
-    `<path d="${s.body}" fill="${fill}" stroke="rgba(0,0,0,.18)" stroke-width="1.5" stroke-linejoin="round"/>` +
-    s.details.map(sub).join('');
-
-  // лёгкие тени поверх ткани и картинки — так принт выглядит «напечатанным»
-  $('#garmentOverlay').innerHTML =
-    `<path d="${s.body}" fill="url(#shade)"/>` +
-    `<path d="${s.body}" fill="url(#shadeV)"/>`;
+  // пока цвет не выбран, показываем светло-серое изделие
+  const fill = color() ? color().hex : '#E4E4E4';
+  const key = state.productId + '|' + fill;
+  if (tintCache[key]) {
+    setHref($('#garmentImg'), tintCache[key]);
+    setHref($('#printShade'), shadeCache[state.productId]);
+  } else {
+    tintGarment(state.productId, fill).then(renderMockup).catch(() => {
+      // фото не загрузилось (например, сайт открыт как файл в Safari) — показываем без окраски
+      setHref($('#garmentImg'), s.img);
+    });
+  }
 
   const p = s.print;
   for (const el of [$('#printClipRect'), $('#printArea')]) {
@@ -137,18 +198,22 @@ function renderMockup() {
     el.setAttribute('width', p.w); el.setAttribute('height', p.h);
   }
   $('#printArea').style.display = STEPS[state.step].id === 'design' ? '' : 'none';
-  $('#printArea').style.stroke = isLight(fill) ? 'rgba(0,0,0,.35)' : 'rgba(255,255,255,.55)';
+  $('#printArea').style.stroke = isLight(fill) ? 'rgba(0,0,0,.35)' : 'rgba(255,255,255,.6)';
 
   const box = imageBox();
   if (box) {
-    designImg.setAttribute('href', state.image.src);
-    designImg.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', state.image.src);
-    designImg.setAttribute('x', box.x); designImg.setAttribute('y', box.y);
-    designImg.setAttribute('width', box.w); designImg.setAttribute('height', box.h);
+    // картинка клиента + маска по её форме, чтобы складки ткани легли только на принт
+    for (const el of [designImg, $('#designMaskImg')]) {
+      setHref(el, state.image.src);
+      el.setAttribute('x', box.x); el.setAttribute('y', box.y);
+      el.setAttribute('width', box.w); el.setAttribute('height', box.h);
+    }
     designImg.setAttribute('visibility', 'visible');
+    $('#printShade').setAttribute('visibility', 'visible');
     designImg.classList.toggle('draggable', STEPS[state.step].id === 'design');
   } else {
     designImg.setAttribute('visibility', 'hidden');
+    $('#printShade').setAttribute('visibility', 'hidden');
   }
 
   const pr = product();
@@ -207,10 +272,7 @@ const views = {
       <p class="lead">На чём будем печатать ваш дизайн?</p>
       <div class="cards">${PRODUCTS.map((p) => `
         <button type="button" class="card ${p.id === state.productId ? 'is-selected' : ''}" data-product="${p.id}">
-          <svg viewBox="0 0 400 460" class="card__pic" aria-hidden="true">
-            ${SHAPES[p.id].back ? SHAPES[p.id].back.replace(/\{fill\}/g, '#fff').replace(/\{dark\}|\{line\}/g, '#cfcfd4') : ''}
-            <path d="${SHAPES[p.id].body}" fill="#fff" stroke="#9a9aa2" stroke-width="5"/>
-          </svg>
+          <img src="${SHAPES[p.id].thumb}" alt="" class="card__pic" loading="lazy">
           <span class="card__name">${p.name}</span>
           <span class="card__desc">${p.desc}</span>
           <span class="card__price">от ${fmt(p.price)}</span>

@@ -22,24 +22,15 @@
       <div class="preview__stage" id="stage">
         <svg id="mockup" viewBox="0 0 400 460" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="Макет изделия">
           <defs>
-            <linearGradient id="shade" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="#000" stop-opacity=".18"/>
-              <stop offset=".18" stop-color="#000" stop-opacity="0"/>
-              <stop offset=".5" stop-color="#fff" stop-opacity=".10"/>
-              <stop offset=".82" stop-color="#000" stop-opacity="0"/>
-              <stop offset="1" stop-color="#000" stop-opacity=".18"/>
-            </linearGradient>
-            <linearGradient id="shadeV" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#fff" stop-opacity=".08"/>
-              <stop offset="1" stop-color="#000" stop-opacity=".10"/>
-            </linearGradient>
             <clipPath id="printClip"><rect id="printClipRect"/></clipPath>
+            <mask id="designMask" style="mask-type: alpha"><image id="designMaskImg" preserveAspectRatio="xMidYMid meet"/></mask>
           </defs>
-          <g id="garment"></g>
+          <image id="garmentImg" x="0" y="0" width="400" height="460" preserveAspectRatio="xMidYMid meet"/>
           <g clip-path="url(#printClip)">
             <image id="designImg" preserveAspectRatio="xMidYMid meet" visibility="hidden"/>
+            <!-- складки ткани поверх принта: так картинка выглядит напечатанной -->
+            <image id="printShade" x="0" y="0" width="400" height="460" mask="url(#designMask)" style="mix-blend-mode: multiply" pointer-events="none" visibility="hidden"/>
           </g>
-          <g id="garmentOverlay" pointer-events="none"></g>
           <rect id="printArea" class="print-area" rx="4"/>
         </svg>
         <div class="preview__empty" id="previewEmpty">Выберите изделие, чтобы начать</div>
@@ -67,6 +58,7 @@
   </main>
 
   <!-- Данные (база изделий и цветов) и логика приложения -->
+  <script src="js/blanks.js"></script>
   <script src="js/data.js"></script>
   <script src="js/pdf.js"></script>
   <script src="js/app.js"></script>
