@@ -319,7 +319,8 @@ const views = {
   color() {
     const p = product();
     return `<h1 class="h1">Цвет изделия</h1>
-      <p class="lead">${p.name}: в наличии ${p.colors.length} ${plural(p.colors.length, 'цвет', 'цвета', 'цветов')}</p>
+      <p class="lead lead--tight">${p.name}: в наличии ${p.colors.length} ${plural(p.colors.length, 'цвет', 'цвета', 'цветов')}</p>
+      <p class="footnote">* Цвета на экране примерные и могут отличаться от реальной ткани. Более точный цвет пришлём после отправки макета.</p>
       <div class="swatches">${p.colors.map((id) => `
         <button type="button" class="swatch ${id === state.colorId ? 'is-selected' : ''}" data-color="${id}" title="${COLORS[id].name}">
           <span class="swatch__dot" style="background:${COLORS[id].hex}"></span>
