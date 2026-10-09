@@ -50,7 +50,8 @@ function shape() {
     ...base,
     ...pl,
     img: pl.img || base.img,
-    imgKey: pl.img ? state.productId + '_' + state.placement : state.productId,
+    // имя файла без папки и расширения: 'img/products/tshirt.png' -> 'tshirt'
+    imgKey: (pl.img || base.img).split('/').pop().replace(/\.\w+$/, ''),
   };
 }
 
