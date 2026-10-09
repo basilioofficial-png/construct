@@ -116,6 +116,8 @@ button { cursor: pointer; }
 .hint { color: var(--muted); font-size: 13px; }
 .lead--tight { margin-bottom: 6px; }
 .footnote { margin: 0 0 22px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.footnote a { color: var(--text); }
+.footnote--chips { margin-top: -6px; }
 
 /* ===== Шаг 1: карточки изделий ===== */
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }

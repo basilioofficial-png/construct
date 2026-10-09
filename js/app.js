@@ -334,7 +334,8 @@ const views = {
       <div class="chips" role="radiogroup" aria-label="Место нанесения">${PLACEMENTS.map((pl) => `
         <button type="button" class="chip ${pl.id === state.placement ? 'is-selected' : ''}" role="radio"
           aria-checked="${pl.id === state.placement}" data-placement="${pl.id}">${pl.name}</button>`).join('')}
-      </div>`;
+      </div>
+      <p class="footnote footnote--chips">* Если нужно нестандартное нанесение — <a href="https://t.me/pnhd_studio_bot" target="_blank" rel="noopener">напишите нам напрямую</a>.</p>`;
     if (!state.image) {
       return `<h1 class="h1">Загрузите картинку</h1>
         ${places}
