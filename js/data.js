@@ -55,13 +55,14 @@ const PLACEMENTS = [
 ];
 
 // Фото: перед (img) и спина (places.back.img). Рукав печатается на виде спереди.
+// Верх зоны на груди и спине — на 2 см ниже нижнего края ворота (≈10 единиц координат).
 const IMG = (name) => `img/products/${name}.png`;
 const THUMB = (name) => `img/products/${name}-thumb.jpg`;
 
 const SHAPE_TSHIRT_REGULAR = {
   img: IMG('tshirt_regular'), thumb: THUMB('tshirt_regular'),
   places: {
-    chest:  { print: { x: 125, y: 100, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
+    chest:  { print: { x: 125, y: 112, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
     back:   { img: IMG('tshirt_regular_back'), print: { x: 125, y: 90, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
     sleeve: { print: { x: 52, y: 140, w: 34, h: 43 }, printCm: { w: 8, h: 10 } },
   },
@@ -69,24 +70,24 @@ const SHAPE_TSHIRT_REGULAR = {
 const SHAPE_TSHIRT_OVERSIZE = {
   img: IMG('tshirt_oversize'), thumb: THUMB('tshirt_oversize'),
   places: {
-    chest:  { print: { x: 125, y: 115, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
-    back:   { img: IMG('tshirt_oversize_back'), print: { x: 125, y: 95, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
+    chest:  { print: { x: 125, y: 126, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
+    back:   { img: IMG('tshirt_oversize_back'), print: { x: 125, y: 82, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
     sleeve: { print: { x: 55, y: 150, w: 34, h: 43 }, printCm: { w: 8, h: 10 } },
   },
 };
 const SHAPE_LONGSLEEVE = {
   img: IMG('longsleeve'), thumb: THUMB('longsleeve'),
   places: {
-    chest:  { print: { x: 130, y: 95, w: 140, h: 190 }, printCm: { w: 28, h: 38 } },
-    back:   { img: IMG('longsleeve_back'), print: { x: 130, y: 85, w: 140, h: 190 }, printCm: { w: 28, h: 38 } },
+    chest:  { print: { x: 130, y: 107, w: 140, h: 190 }, printCm: { w: 28, h: 38 } },
+    back:   { img: IMG('longsleeve_back'), print: { x: 130, y: 84, w: 140, h: 190 }, printCm: { w: 28, h: 38 } },
     sleeve: { print: { x: 84, y: 125, w: 22, h: 44 }, printCm: { w: 6, h: 12 } },
   },
 };
 const SHAPE_SWEATSHIRT = {
   img: IMG('sweatshirt'), thumb: THUMB('sweatshirt'),
   places: {
-    chest:  { print: { x: 125, y: 115, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
-    back:   { img: IMG('sweatshirt_back'), print: { x: 125, y: 100, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
+    chest:  { print: { x: 125, y: 121, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
+    back:   { img: IMG('sweatshirt_back'), print: { x: 125, y: 92, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
     sleeve: { print: { x: 70, y: 160, w: 34, h: 43 }, printCm: { w: 8, h: 10 } },
   },
 };
@@ -94,8 +95,8 @@ const SHAPE_HOODIE = {
   img: IMG('hoodie'), thumb: THUMB('hoodie'),
   places: {
     // между капюшоном и карманом-кенгуру
-    chest:  { print: { x: 130, y: 125, w: 140, h: 110 }, printCm: { w: 28, h: 22 } },
-    back:   { img: IMG('hoodie_back'), print: { x: 120, y: 165, w: 160, h: 190 }, printCm: { w: 32, h: 38 } },
+    chest:  { print: { x: 130, y: 143, w: 140, h: 92 }, printCm: { w: 28, h: 18 } },
+    back:   { img: IMG('hoodie_back'), print: { x: 120, y: 170, w: 160, h: 180 }, printCm: { w: 32, h: 36 } },
     sleeve: { print: { x: 80, y: 165, w: 28, h: 35 }, printCm: { w: 8, h: 10 } },
   },
 };
@@ -103,7 +104,7 @@ const SHAPE_ZIPHOODIE = {
   img: IMG('ziphoodie'), thumb: THUMB('ziphoodie'),
   places: {
     // на груди молния, поэтому печать небольшая — слева на груди
-    chest:  { print: { x: 218, y: 125, w: 50, h: 50 }, printCm: { w: 10, h: 10 } },
+    chest:  { print: { x: 218, y: 145, w: 50, h: 50 }, printCm: { w: 10, h: 10 } },
     back:   SHAPE_HOODIE.places.back,
     sleeve: { print: { x: 80, y: 165, w: 28, h: 35 }, printCm: { w: 8, h: 10 } },
   },
