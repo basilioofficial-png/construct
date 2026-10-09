@@ -38,7 +38,9 @@ img{max-width:100%}
   .site-nav{display:none !important;flex-direction:column;align-items:stretch !important;gap:0 !important;padding:0 16px 16px !important;font-size:16px !important}
   .menu-open .site-nav{display:flex !important}
   .site-nav > a{padding:13px 0;border-bottom:1px solid #EEEEEE}
-  .site-nav > a[href="constructor.html"]{margin:10px 0;min-height:44px !important;border-bottom:1px solid #111111}
+  /* «Конструктор» — обычный пункт меню, слово выделено салатовой плашкой */
+  .site-nav > a[href="constructor.html"]{display:block !important;min-width:0 !important;min-height:0 !important;padding:13px 0 !important;background:none !important;border:0 !important;border-bottom:1px solid #EEEEEE !important;border-radius:0 !important}
+  .nav-hl{background:var(--accent);padding:2px 8px;margin-left:-8px}
   .nav-extra{display:flex;flex-direction:column;gap:8px;padding-top:16px}
   .nav-extra__btn{display:flex;align-items:center;justify-content:center;min-height:44px;border:1px solid #111111;border-radius:6px;font-weight:700;font-size:14px;text-decoration:none;color:#111111}
   .nav-extra__btn--accent{background:var(--accent)}
@@ -89,7 +91,7 @@ img{max-width:100%}
       <a href="#directions" style="text-decoration: none">услуги</a>
       <a href="#methods" style="text-decoration: none">методы нанесения</a>
       <a href="#faq" style="text-decoration: none">FAQ</a>
-      <a href="constructor.html" style="display: inline-flex; align-items: center; justify-content: center; min-width: 130px; min-height: 22px; padding: 0 20px; background: var(--accent); border: 1px solid #111111; border-radius: 4px; text-decoration: none; color: #111111">Конструктор</a>
+      <a href="constructor.html" style="display: inline-flex; align-items: center; justify-content: center; min-width: 130px; min-height: 22px; padding: 0 20px; background: var(--accent); border: 1px solid #111111; border-radius: 4px; text-decoration: none; color: #111111"><span class="nav-hl">Конструктор</span></a>
       <a href="#reviews" style="text-decoration: none">отзывы</a>
       <a href="https://pnhd.ru/?utm_source=studio" target="_blank" rel="noopener" style="text-decoration: none">оптовый отдел</a>
       <a href="#contacts" style="text-decoration: none">контакты</a>
