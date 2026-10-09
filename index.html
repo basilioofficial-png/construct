@@ -24,6 +24,20 @@ html{overflow-x:hidden}
 img{max-width:100%}
 .lead-ok{font-weight:700;font-size:14px}
 .lead-err{color:#C62828;font-size:11px}
+.modal{width:min(100% - 32px,440px);padding:0;border:1px solid #111111;border-radius:0;background:#FFFFFF;color:#111111;font-family:Manrope,system-ui,sans-serif}
+.modal::backdrop{background:rgba(17,17,17,.6)}
+.modal__inner{position:relative;padding:28px 24px 24px;display:flex;flex-direction:column;gap:14px}
+.modal__close{position:absolute;top:8px;right:8px;width:32px;height:32px;border:0;background:none;font-size:24px;line-height:1;cursor:pointer;color:#111111}
+.modal__title{margin:0;padding-right:28px;font-family:Unbounded,sans-serif;font-weight:900;font-size:20px;line-height:1.1}
+.modal__text{margin:0;font-size:13px;color:#555555}
+.modal label.f{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#555555}
+.modal input[type=text],.modal input[type=tel],.modal input[type=number]{height:38px;border:1px solid #BBBBBB;border-radius:0;padding:0 10px;font:inherit;font-size:14px;color:#111111}
+.modal input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:#111111}
+.modal fieldset{margin:0;padding:0;border:0;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:13px}
+.modal legend{width:100%;padding:0 0 6px;font-size:11px;color:#555555}
+.modal .check{display:flex;gap:8px;align-items:flex-start;font-size:11px}
+.modal__btn{align-self:flex-start;min-height:40px;padding:0 22px;background:var(--accent);border:1px solid #111111;border-radius:0;font-family:Unbounded,sans-serif;font-weight:800;font-size:12px;cursor:pointer;color:#111111}
+.modal__done{padding:12px 0 4px;font-family:Unbounded,sans-serif;font-weight:700;font-size:15px;line-height:1.35}
 @media (max-width: 820px){
   /* колонки не шире экрана, логотип в подвале компактнее */
   .stack{grid-template-columns:minmax(0,1fr) !important}
@@ -91,7 +105,7 @@ img{max-width:100%}
 
   <!-- ВИЛКА: 3 НАПРАВЛЕНИЯ -->
   <section id="directions" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 8px">
-    <a href="#" style="display: flex; flex-direction: column; border: 1px solid #111111; background: #FFFFFF; text-decoration: none; color: #111111">
+    <a href="constructor.html" style="display: flex; flex-direction: column; border: 1px solid #111111; background: #FFFFFF; text-decoration: none; color: #111111">
       <img src="assets/eb9a75a07c6f80d5b4c812f64cd7a2e1.png" alt="Печать на футболке" style="width: 100%; height: 240px; object-fit: cover">
       <div style="padding: 20px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1">
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #555555">01</span>
@@ -100,7 +114,7 @@ img{max-width:100%}
         <span style="align-self: flex-start; width: 52px; height: 22px; background: var(--accent); display: flex; align-items: center; justify-content: center"><svg width="22" height="12" viewBox="0 0 22 12" fill="none" stroke="#111111" stroke-width="1.6" aria-hidden="true"><path d="M1 6h19M15 1l5 5-5 5"></path></svg></span>
       </div>
     </a>
-    <a href="#" style="display: flex; flex-direction: column; border: 1px solid #111111; background: #383838; text-decoration: none; color: #FFFFFF">
+    <a href="https://teamatika.com/" target="_blank" rel="noopener" style="display: flex; flex-direction: column; border: 1px solid #111111; background: #383838; text-decoration: none; color: #FFFFFF">
       <img src="assets/9d68fe49c6a6af727904a2213f49bcda.png" alt="Подарочный принт" style="width: 100%; height: 240px; object-fit: cover">
       <div style="padding: 20px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1">
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #C8C8C8">02</span>
@@ -109,7 +123,7 @@ img{max-width:100%}
         <span style="align-self: flex-start; width: 52px; height: 22px; background: var(--accent); display: flex; align-items: center; justify-content: center"><svg width="22" height="12" viewBox="0 0 22 12" fill="none" stroke="#111111" stroke-width="1.6" aria-hidden="true"><path d="M1 6h19M15 1l5 5-5 5"></path></svg></span>
       </div>
     </a>
-    <a href="#" style="display: flex; flex-direction: column; border: 1px solid #111111; background: #FFFFFF; text-decoration: none; color: #111111">
+    <a href="#tirage" data-modal="tirageModal" style="display: flex; flex-direction: column; border: 1px solid #111111; background: #FFFFFF; text-decoration: none; color: #111111">
       <img src="assets/d0b0511f23597b7561b42b7669ba4a29.png" alt="Мерч тиражом" style="width: 100%; height: 240px; object-fit: cover">
       <div style="padding: 20px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1">
         <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #555555">03</span>
@@ -473,6 +487,28 @@ img{max-width:100%}
 
 </div>
 
+<!-- Всплывающая форма «Тираж» -->
+<dialog class="modal" id="tirageModal" aria-labelledby="tirageTitle">
+  <div class="modal__inner">
+    <button type="button" class="modal__close" data-close aria-label="Закрыть">×</button>
+    <h2 class="modal__title" id="tirageTitle">ЗАЯВКА НА ТИРАЖ</h2>
+    <p class="modal__text">Оставьте контакты — рассчитаем стоимость и сроки.</p>
+    <form id="tirageForm" novalidate style="display: flex; flex-direction: column; gap: 12px">
+      <label class="f">ФИО *<input type="text" name="name" autocomplete="name" required></label>
+      <label class="f">Номер телефона *<input type="tel" name="phone" value="+7" autocomplete="tel" required></label>
+      <label class="f">Количество изделий *<input type="number" name="qty" min="1" step="1" inputmode="numeric" required></label>
+      <fieldset>
+        <legend>Есть макет? *</legend>
+        <label><input type="radio" name="layout" value="да"> Да</label>
+        <label><input type="radio" name="layout" value="нет"> Нет</label>
+      </fieldset>
+      <label class="check"><input type="checkbox" name="consent" checked>Согласен с политикой конфиденциальности</label>
+      <div class="lead-err" aria-live="polite"></div>
+      <button type="submit" class="modal__btn">СВЯЗАТЬСЯ</button>
+    </form>
+  </div>
+</dialog>
+
 <script>
 // Форма консультации. Пока заявки никуда не отправляются: адрес для них
 // нужно указать в LEAD_ENDPOINT (как orderEndpoint в конструкторе).
@@ -492,6 +528,38 @@ form.addEventListener('submit', async (e) => {
     } catch (e) { /* не получилось — всё равно благодарим, менеджер увидит заявку в другом канале */ }
   }
   form.innerHTML = '<div class="lead-ok">Спасибо! Мы перезвоним в течение 15 минут.</div>';
+});
+// Всплывающая форма «Тираж»
+const modal = document.getElementById('tirageModal');
+const tirageForm = document.getElementById('tirageForm');
+const tirageHtml = tirageForm.innerHTML; // чтобы после «Спасибо» можно было отправить заявку снова
+document.querySelectorAll('[data-modal="tirageModal"]').forEach((a) => a.addEventListener('click', (e) => {
+  e.preventDefault();
+  modal.showModal();
+}));
+modal.querySelector('[data-close]').addEventListener('click', () => modal.close());
+// клик по затемнённому фону вокруг окна — закрыть
+modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+modal.addEventListener('close', () => {
+  if (tirageForm.dataset.sent) { tirageForm.innerHTML = tirageHtml; delete tirageForm.dataset.sent; }
+});
+tirageForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(tirageForm));
+  const err = tirageForm.querySelector('.lead-err');
+  const fail = (msg, name) => { err.textContent = msg; const el = tirageForm.querySelector(`[name="${name}"]`); if (el) el.focus(); };
+  if (!data.name || data.name.trim().length < 2) return fail('Укажите ФИО', 'name');
+  if ((data.phone || '').replace(/\D/g, '').length < 11) return fail('Проверьте номер телефона', 'phone');
+  if (!(parseInt(data.qty, 10) >= 1)) return fail('Укажите количество изделий', 'qty');
+  if (!data.layout) return fail('Отметьте, есть ли у вас макет', 'layout');
+  if (!data.consent) return fail('Нужно согласие с политикой конфиденциальности', 'consent');
+  if (LEAD_ENDPOINT) {
+    try {
+      await fetch(LEAD_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'тираж', ...data }) });
+    } catch (e) { /* см. комментарий у формы консультации */ }
+  }
+  tirageForm.dataset.sent = '1';
+  tirageForm.innerHTML = '<div class="modal__done">Спасибо! Наш менеджер свяжется с вами в течение 15 минут.</div>';
 });
 </script>
 </body>
