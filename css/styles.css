@@ -43,7 +43,8 @@ button { cursor: pointer; }
   border-bottom: 1px solid var(--line);
 }
 .logo { font-weight: 800; font-size: 22px; letter-spacing: .06em; color: var(--text); text-decoration: none; }
-.topbar__hint { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+.topbar__back { color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; }
+.topbar__back:hover { color: var(--text); }
 
 /* ===== Раскладка: превью слева, шаги справа ===== */
 .layout {
@@ -249,7 +250,6 @@ button:focus-visible, .drop:focus-within { outline: 2px solid var(--accent); out
 @media (max-width: 900px) {
   :root { --topbar: 56px; }
   .topbar { padding: 0 16px; }
-  .topbar__hint { display: none; }
   .layout { grid-template-columns: minmax(0, 1fr); }
   .preview { position: relative; top: 0; height: auto; padding: 16px; }
   .preview__stage { max-width: 340px; max-height: none; }
