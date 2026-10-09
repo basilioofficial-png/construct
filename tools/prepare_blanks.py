@@ -82,7 +82,7 @@ def build_js():
              'const BLANK_IMAGES = {']
     for png in sorted(OUT.glob('*.png')):
         data = base64.b64encode(png.read_bytes()).decode()
-        lines.append(f"  {png.stem}: 'data:image/png;base64,{data}',")
+        lines.append(f"  '{png.stem}': 'data:image/png;base64,{data}',")
     lines.append('};')
     (ROOT / 'js' / 'blanks.js').write_text('\n'.join(lines) + '\n')
 

@@ -85,6 +85,7 @@ async function renderOrderPage({ order, mockupSrc, designSrc }) {
     ['Количество', `${order.qty} шт`],
     ['Цена за шт', fmt(order.unitPrice)],
     ['Скидка', order.discount ? `${order.discount}%` : '—'],
+    ['Место нанесения', order.print.placementName],
     ['Размер печати', `≈ ${Math.round(order.print.widthCm)} × ${Math.round(order.print.heightCm)} см`],
     ['Качество', `${order.print.dpi} dpi`],
     ['Файл', order.file.name],

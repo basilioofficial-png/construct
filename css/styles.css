@@ -173,6 +173,7 @@ input[type="range"] { width: 100%; accent-color: var(--text); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .chip { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font-size: 13px; font-weight: 600; }
 .chip:hover { border-color: var(--text); }
+.chip.is-selected { background: var(--text); border-color: var(--text); color: #fff; }
 
 .note { padding: 12px 14px; border-radius: 10px; background: var(--stage); font-size: 13px; }
 .note--warn { background: var(--warn-soft); color: var(--warn); }

@@ -22,6 +22,7 @@ const state = {
   productId: null,
   colorId: null,
   image: null,           // { src, w, h, name, size }
+  placement: 'chest',   // место нанесения: chest / back / sleeve
   place: { scale: 0.8, dx: 0, dy: 0 }, // масштаб и смещение картинки
   confirmed: false,
   qty: {},               // { 'M': 2, 'L': 1 }
@@ -37,7 +38,21 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 
 const product = () => PRODUCTS.find((p) => p.id === state.productId) || null;
 const color = () => (state.colorId ? COLORS[state.colorId] : null);
-const shape = () => (state.productId ? SHAPES[state.productId] : null);
+const placement = () => PLACEMENTS.find((x) => x.id === state.placement) || PLACEMENTS[0];
+
+// Изделие с учётом места нанесения: своя зона печати и, если есть, своё фото
+// (например, вид сзади). imgKey — имя картинки в кеше и в js/blanks.js.
+function shape() {
+  if (!state.productId) return null;
+  const base = SHAPES[state.productId];
+  const pl = base.places[state.placement] || base.places.chest;
+  return {
+    ...base,
+    ...pl,
+    img: pl.img || base.img,
+    imgKey: pl.img ? state.productId + '_' + state.placement : state.productId,
+  };
+}
 
 function isLight(hex) {
   const n = parseInt(hex.slice(1), 16);
@@ -108,7 +123,7 @@ const tintCache = {};   // 'tshirt|#FFFFFF' -> dataURL
 const shadeCache = {};  // 'tshirt' -> dataURL с тенями для принта
 const baseCache = {};   // 'tshirt' -> Promise<ImageData>
 
-function loadBase(id) {
+function loadBase(id, src) {
   if (!baseCache[id]) {
     baseCache[id] = new Promise((resolve, reject) => {
       const img = new Image();
@@ -121,7 +136,7 @@ function loadBase(id) {
       };
       img.onerror = reject;
       // берём фото из js/blanks.js (работает и без сервера), иначе — файл
-      img.src = (typeof BLANK_IMAGES !== 'undefined' && BLANK_IMAGES[id]) || SHAPES[id].img;
+      img.src = (typeof BLANK_IMAGES !== 'undefined' && BLANK_IMAGES[id]) || src;
     });
   }
   return baseCache[id];
@@ -134,10 +149,10 @@ function pixelsToUrl(data, w, h) {
   return c.toDataURL('image/png');
 }
 
-async function tintGarment(id, hex) {
+async function tintGarment(id, url, hex) {
   const key = id + '|' + hex;
   if (tintCache[key]) return;
-  const base = await loadBase(id);
+  const base = await loadBase(id, url);
   const n = parseInt(hex.slice(1), 16);
   const rgb = [n >> 16, (n >> 8) & 255, n & 255];
   const src = base.data, out = new Uint8ClampedArray(src.length);
@@ -181,12 +196,12 @@ function renderMockup() {
 
   // пока цвет не выбран, показываем светло-серое изделие
   const fill = color() ? color().hex : '#E4E4E4';
-  const key = state.productId + '|' + fill;
+  const key = s.imgKey + '|' + fill;
   if (tintCache[key]) {
     setHref($('#garmentImg'), tintCache[key]);
-    setHref($('#printShade'), shadeCache[state.productId]);
+    setHref($('#printShade'), shadeCache[s.imgKey]);
   } else {
-    tintGarment(state.productId, fill).then(renderMockup).catch(() => {
+    tintGarment(s.imgKey, s.img, fill).then(renderMockup).catch(() => {
       // фото не загрузилось (например, сайт открыт как файл в Safari) — показываем без окраски
       setHref($('#garmentImg'), s.img);
     });
@@ -293,8 +308,14 @@ const views = {
   },
 
   design() {
+    const places = `<div class="field__label">Место нанесения</div>
+      <div class="chips" role="radiogroup" aria-label="Место нанесения">${PLACEMENTS.map((pl) => `
+        <button type="button" class="chip ${pl.id === state.placement ? 'is-selected' : ''}" role="radio"
+          aria-checked="${pl.id === state.placement}" data-placement="${pl.id}">${pl.name}</button>`).join('')}
+      </div>`;
     if (!state.image) {
       return `<h1 class="h1">Загрузите картинку</h1>
+        ${places}
         <p class="lead">PNG, JPG, WEBP или SVG до ${SETTINGS.maxFileMb} МБ. Лучше всего — PNG с прозрачным фоном.</p>
         <label class="drop" id="drop">
           <input type="file" id="fileInput" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
@@ -308,6 +329,7 @@ const views = {
     const lowQ = st && st.dpi < SETTINGS.minDpi;
     return `<h1 class="h1">Расположите картинку</h1>
       <p class="lead">Перетащите картинку на превью. Пунктир — зона печати.</p>
+      ${places}
       <div class="file">
         <img src="${state.image.src}" alt="" class="file__thumb">
         <div class="file__info">
@@ -339,6 +361,7 @@ const views = {
       <dl class="summary">
         <div><dt>Изделие</dt><dd>${p.name} <button type="button" class="link" data-goto="0">изменить</button></dd></div>
         <div><dt>Цвет</dt><dd><span class="dot" style="background:${color().hex}"></span>${color().name} <button type="button" class="link" data-goto="1">изменить</button></dd></div>
+        <div><dt>Место нанесения</dt><dd>${placement().name} <button type="button" class="link" data-goto="2">изменить</button></dd></div>
         <div><dt>Файл</dt><dd>${esc(state.image.name)} <button type="button" class="link" data-goto="2">изменить</button></dd></div>
         <div><dt>Размер печати</dt><dd>≈ ${st.wCm.toFixed(0)} × ${st.hCm.toFixed(0)} см</dd></div>
         <div><dt>Качество</dt><dd>${st.dpi} dpi ${st.dpi < SETTINGS.minDpi ? '<span class="tag tag--warn">низкое</span>' : '<span class="tag">хорошее</span>'}</dd></div>
@@ -407,6 +430,7 @@ const views = {
         <p class="lead">Спасибо, ${esc(o.contact.name.split(' ')[0])}! Мы отправим подтверждение на ${esc(o.contact.email)} и позвоним по номеру ${esc(o.contact.phone)}.</p>
         <dl class="summary">
           <div><dt>Изделие</dt><dd>${o.product}, ${o.color}</dd></div>
+          <div><dt>Нанесение</dt><dd>${o.print.placementName}</dd></div>
           <div><dt>Размеры</dt><dd>${Object.entries(o.sizes).map(([s, n]) => `${s} × ${n}`).join(', ')}</dd></div>
           <div><dt>Всего</dt><dd>${o.qty} шт · ${fmt(o.total)}${o.discount ? ` (скидка ${o.discount}%)` : ''}</dd></div>
         </dl>
@@ -500,6 +524,14 @@ function bindStep() {
     render();
   }));
 
+  body.querySelectorAll('[data-placement]').forEach((b) => b.addEventListener('click', () => {
+    state.placement = b.dataset.placement;
+    // у каждого места своя зона печати — начинаем расположение заново
+    state.place = { scale: 0.8, dx: 0, dy: 0 };
+    state.confirmed = false;
+    render();
+  }));
+
   body.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => goTo(Number(b.dataset.goto))));
 
   // загрузка файла
@@ -579,7 +611,7 @@ const actions = {
   downloadPdf() { downloadPdf(); },
   restart() {
     Object.assign(state, {
-      step: 0, maxStep: 0, productId: null, colorId: null, image: null,
+      step: 0, maxStep: 0, productId: null, colorId: null, image: null, placement: 'chest',
       place: { scale: 0.8, dx: 0, dy: 0 }, confirmed: false, qty: {}, order: null,
     });
     render();
@@ -649,7 +681,14 @@ async function submitOrder() {
     unitPrice: Math.round(pi.unit),
     discount: pi.percent,
     total: Math.round(pi.total),
-    print: { widthCm: +st.wCm.toFixed(1), heightCm: +st.hCm.toFixed(1), dpi: st.dpi, placement: { ...state.place } },
+    print: {
+      placement: state.placement,
+      placementName: placement().name,
+      widthCm: +st.wCm.toFixed(1),
+      heightCm: +st.hCm.toFixed(1),
+      dpi: st.dpi,
+      position: { ...state.place },
+    },
     file: { name: state.image.name, width: state.image.w, height: state.image.h },
     contact: { ...state.contact },
   };
