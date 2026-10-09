@@ -85,7 +85,7 @@ async function renderOrderPage({ order, mockupSrc, designSrc }) {
     ['Количество', `${order.qty} шт`],
     ['Изделие, за шт', fmt(order.garmentPrice)],
     ['Печать DTF, за шт', `${fmt(order.printPrice)} · ${order.print.format}${order.personal ? ' · персонализация' : ''}`],
-    ['Цена за шт', fmt(order.unitPrice)],
+    ['Примерная цена за шт', fmt(order.unitPrice)],
     ['Место нанесения', order.print.placementName],
     ['Размер печати', `≈ ${Math.round(order.print.widthCm)} × ${Math.round(order.print.heightCm)} см`],
     ['Качество', `${order.print.dpi} dpi`],
@@ -104,11 +104,13 @@ async function renderOrderPage({ order, mockupSrc, designSrc }) {
   y += 60;
   ctx.fillStyle = muted;
   ctx.font = font(26);
-  ctx.fillText('Итого', cx, y);
+  ctx.fillText('Примерная сумма', cx, y);
   ctx.fillStyle = accent;
   ctx.font = font(52, 800);
   ctx.fillText(fmt(order.total), cx, y + 64);
-  const detailsEnd = y + 64;
+  ctx.fillStyle = muted;
+  ctx.font = font(20);
+  const detailsEnd = wrapText(ctx, 'Цена примерная и может измениться при обсуждении с менеджером.', cx, y + 104, cw, 28) - 28;
 
   // Нижний блок: исходная картинка и контакты (ниже макета и деталей)
   y = Math.max(top + mockH, detailsEnd) + 110;

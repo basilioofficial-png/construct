@@ -7,6 +7,9 @@
  *   3. render() перерисовывает превью, шаги, текущий экран и цену.
  */
 
+// Пометка у всех цен в конструкторе
+const PRICE_NOTE = 'Цена примерная и может измениться при обсуждении с менеджером.';
+
 const STEPS = [
   { id: 'product', title: 'Изделие' },
   { id: 'color',   title: 'Цвет' },
@@ -351,7 +354,8 @@ const views = {
           <span class="card__desc">${p.desc}</span>
           <span class="card__price">от ${fmt(p.price)}</span>
         </button>`).join('')}
-      </div>`;
+      </div>
+      <p class="footnote footnote--after">* Цены указаны за изделие без печати. ${PRICE_NOTE}</p>`;
   },
 
   color() {
@@ -452,7 +456,7 @@ const views = {
         <span>Персонализация — на каждом изделии свой принт (имя, номер). Печать ×${String(SETTINGS.dtf.personalCoef).replace('.', ',')}</span>
       </label>
       <div class="totals" id="qtyTotals">${qtyTotals(pi)}</div>
-      <p class="footnote">* Стоимость рассчитана для печати DTF, цена принта — вместе с прижимом и зависит от тиража. Стоимость других методов нанесения уточнит менеджер.</p>`;
+      <p class="footnote">* Стоимость рассчитана для печати DTF, цена принта — вместе с прижимом и зависит от тиража. Стоимость других методов нанесения уточнит менеджер. ${PRICE_NOTE}</p>`;
   },
 
   contact() {
@@ -496,8 +500,9 @@ const views = {
           <div><dt>Нанесение</dt><dd>${o.print.placementName}</dd></div>
           <div><dt>Размеры</dt><dd>${Object.entries(o.sizes).map(([s, n]) => `${s} × ${n}`).join(', ')}</dd></div>
           <div><dt>Печать</dt><dd>DTF, ${o.print.format}${o.personal ? ', персонализация' : ''}</dd></div>
-          <div><dt>Всего</dt><dd>${o.qty} шт · ${fmt(o.total)}</dd></div>
+          <div><dt>Примерная сумма</dt><dd>${o.qty} шт · ${fmt(o.total)}</dd></div>
         </dl>
+        <p class="footnote">* ${PRICE_NOTE} Менеджер свяжется с вами и подтвердит итоговую стоимость.</p>
         ${o.sendError ? `<p class="note note--warn">Не удалось отправить заказ: ${esc(o.sendError)}. Скачайте PDF и <a href="https://t.me/pnhd_studio_bot" target="_blank" rel="noopener">напишите нам в Telegram</a> — оформим вручную.</p>` : ''}
         ${!o.sendError && o.fileError ? `<p class="note note--warn">Заказ принят, но файл картинки не загрузился. Менеджер попросит прислать его ещё раз.</p>` : ''}
         <div class="done__actions">
@@ -513,7 +518,7 @@ function qtyTotals(pi) {
   return `<div><span>Всего</span><b>${pi.qty} шт</b></div>
     <div><span>Изделие</span><span>${fmt(pi.garment)}</span></div>
     <div><span>Печать DTF${pi.format ? `, ${pi.format.name}` : ''}${state.personal ? ' ×' + String(SETTINGS.dtf.personalCoef).replace('.', ',') : ''}</span><span>${pi.format ? fmt(pi.print) : 'уточнит менеджер'}</span></div>
-    <div><span>Цена за шт</span><b>${fmt(pi.unit)}</b></div>
+    <div><span>Примерная цена за шт</span><b>${fmt(pi.unit)}</b></div>
     ${pi.next ? `<div class="totals__hint">От ${pi.next.qty} шт печать дешевле — ${fmt(pi.next.print)} за принт</div>` : ''}`;
 }
 
@@ -667,7 +672,8 @@ function printNoteHtml() {
   const f = printFormat();
   const lowQ = st.dpi < SETTINGS.minDpi;
   return `Размер печати ≈ ${st.wCm.toFixed(0)} × ${st.hCm.toFixed(0)} см · качество ${st.dpi} dpi<br>` +
-    `Формат DTF: <b>${formatLabel(f)}</b>${f ? ` — от ${fmt(f.prices[0])} за принт` : ''}` +
+    `Формат DTF: <b>${formatLabel(f)}</b>${f ? ` — от ${fmt(f.prices[0])} за принт` : ''}<br>` +
+    `<span class="note__small">${PRICE_NOTE}</span>` +
     (lowQ ? '<br>Картинка маловата — на отпечатке может быть нечёткой. Уменьшите размер или загрузите файл побольше.' : '');
 }
 
