@@ -43,6 +43,7 @@ button { cursor: pointer; }
   border-bottom: 1px solid var(--line);
 }
 .logo { font-weight: 800; font-size: 22px; letter-spacing: .06em; color: var(--text); text-decoration: none; }
+.logo img { display: block; height: 36px; width: auto; }
 .topbar__back { color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; }
 .topbar__back:hover { color: var(--text); }
 
@@ -249,7 +250,9 @@ button:focus-visible, .drop:focus-within { outline: 2px solid var(--accent); out
 /* ===== Телефоны и планшеты ===== */
 @media (max-width: 900px) {
   :root { --topbar: 56px; }
-  .topbar { padding: 0 16px; }
+  .topbar { padding: 0 16px; gap: 12px; }
+  .logo img { height: 26px; }
+  .topbar__back { font-size: 12px; white-space: nowrap; }
   .layout { grid-template-columns: minmax(0, 1fr); }
   .preview { position: relative; top: 0; height: auto; padding: 16px; }
   .preview__stage { max-width: 340px; max-height: none; }
