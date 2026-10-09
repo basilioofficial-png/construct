@@ -117,6 +117,8 @@ button { cursor: pointer; }
 .lead--tight { margin-bottom: 6px; }
 .footnote { margin: 0 0 22px; color: var(--muted); font-size: 12px; line-height: 1.45; }
 .footnote a { color: var(--text); }
+.check--qty { margin-top: 16px; font-size: 13px; }
+#qtyTotals + .footnote { margin-top: 12px; }
 .footnote--chips { margin-top: -6px; }
 
 /* ===== Шаг 1: карточки изделий ===== */
@@ -208,7 +210,7 @@ input[type="range"] { width: 100%; accent-color: var(--text); }
 .stepper-input input::-webkit-outer-spin-button,
 .stepper-input input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .totals { margin-top: 16px; padding: 14px 16px; border-radius: var(--radius); background: var(--stage); display: grid; gap: 4px; }
-.totals > div { display: flex; justify-content: space-between; }
+.totals > div { display: flex; justify-content: space-between; gap: 12px; }
 .totals s { color: var(--muted); font-weight: 500; margin-left: 6px; }
 .totals__hint { color: var(--accent); font-weight: 600; font-size: 13px; }
 

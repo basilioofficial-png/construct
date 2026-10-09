@@ -25,6 +25,7 @@ const state = {
   placement: 'chest',   // место нанесения: chest / back / sleeve
   place: { scale: 0.8, dx: 0, dy: 0 }, // масштаб и смещение картинки
   confirmed: false,
+  personal: false,      // персонализированная печать (×1.5)
   qty: {},               // { 'M': 2, 'L': 1 }
   contact: { name: '', phone: '', email: '', city: '', address: '', comment: '', consent: false },
   order: null,           // заполняется после оформления
@@ -65,18 +66,47 @@ function totalQty() {
   return Object.values(state.qty).reduce((a, b) => a + b, 0);
 }
 
-function discountFor(qty) {
-  const d = SETTINGS.discounts.find((x) => qty >= x.qty);
-  return d ? d.percent : 0;
+/* ---------- Цена: изделие + DTF-печать ---------- */
+
+// Ступень прайса по количеству: 1–9 шт → 0, от 10 → 1, от 20 → 2 …
+function tierIndex(qty) {
+  const t = SETTINGS.dtf.tiers;
+  let i = 0;
+  while (i + 1 < t.length && qty >= t[i + 1]) i++;
+  return i;
+}
+
+// Самый маленький формат, в который помещается принт (можно повернуть)
+function printFormat() {
+  const st = printStats();
+  if (!st) return null;
+  const w = st.wCm - 0.5, h = st.hCm - 0.5; // полсантиметра запаса на округление
+  return SETTINGS.dtf.formats.find((f) => (w <= f.w && h <= f.h) || (w <= f.h && h <= f.w)) || null;
 }
 
 function priceInfo() {
   const p = product();
   if (!p) return null;
   const qty = totalQty();
-  const percent = discountFor(qty);
-  const unit = p.price * (1 - percent / 100);
-  return { qty, percent, unit, total: unit * qty, base: p.price };
+  const tier = tierIndex(qty);
+  const format = printFormat();
+  const coef = state.personal ? SETTINGS.dtf.personalCoef : 1;
+  const print = format ? format.prices[tier] * coef : 0;
+  const unit = p.price + print;
+  const nextTier = SETTINGS.dtf.tiers[tier + 1];
+  const next = format && nextTier
+    ? { qty: nextTier, print: format.prices[tier + 1] * coef }
+    : null;
+  return { qty, tier, format, garment: p.price, print, unit, total: unit * qty, next };
+}
+
+function formatLabel(f) {
+  return f ? `${f.name} (${f.w}×${f.h} см)` : 'нестандартный — уточнит менеджер';
+}
+
+function footerPrice() {
+  const pi = priceInfo();
+  $('#totalPrice').textContent = !pi ? '—' : pi.qty ? fmt(pi.total) : `от ${fmt(pi.unit)} / шт`;
 }
 
 /* ---------- Геометрия картинки на изделии ---------- */
@@ -371,9 +401,7 @@ const views = {
         <button type="button" class="chip" data-action="fit">Во всю зону</button>
         <button type="button" class="chip" data-action="reset">Сбросить</button>
       </div>
-      ${st ? `<p class="note ${lowQ ? 'note--warn' : ''}" id="printNote">
-        Размер печати ≈ ${st.wCm.toFixed(0)} × ${st.hCm.toFixed(0)} см · качество ${st.dpi} dpi
-        ${lowQ ? '<br>Картинка маловата — на отпечатке может быть нечёткой. Уменьшите размер или загрузите файл побольше.' : ''}</p>` : ''}`;
+      ${st ? `<p class="note ${lowQ ? 'note--warn' : ''}" id="printNote">${printNoteHtml()}</p>` : ''}`;
   },
 
   confirm() {
@@ -387,6 +415,7 @@ const views = {
         <div><dt>Место нанесения</dt><dd>${placement().name} <button type="button" class="link" data-goto="2">изменить</button></dd></div>
         <div><dt>Файл</dt><dd>${esc(state.image.name)} <button type="button" class="link" data-goto="2">изменить</button></dd></div>
         <div><dt>Размер печати</dt><dd>≈ ${st.wCm.toFixed(0)} × ${st.hCm.toFixed(0)} см</dd></div>
+        <div><dt>Формат DTF</dt><dd>${formatLabel(printFormat())}</dd></div>
         <div><dt>Качество</dt><dd>${st.dpi} dpi ${st.dpi < SETTINGS.minDpi ? '<span class="tag tag--warn">низкое</span>' : '<span class="tag">хорошее</span>'}</dd></div>
       </dl>
       <label class="check">
@@ -398,7 +427,6 @@ const views = {
   qty() {
     const p = product();
     const pi = priceInfo();
-    const next = SETTINGS.discounts.slice().reverse().find((d) => d.qty > pi.qty);
     return `<h1 class="h1">Количество</h1>
       <p class="lead">${p.sizes.length > 1 ? 'Укажите, сколько штук каждого размера нужно.' : 'Сколько штук нужно?'}</p>
       <div class="qty">${p.sizes.map((size) => `
@@ -411,8 +439,12 @@ const views = {
           </div>
         </div>`).join('')}
       </div>
-      <div class="totals" id="qtyTotals">${qtyTotals(pi, next)}</div>
-      <p class="hint">Скидки: ${SETTINGS.discounts.slice().reverse().map((d) => `от ${d.qty} шт — ${d.percent}%`).join(', ')}</p>`;
+      <label class="check check--qty">
+        <input type="checkbox" id="personalBox" ${state.personal ? 'checked' : ''}>
+        <span>Персонализация — на каждом изделии свой принт (имя, номер). Печать ×${String(SETTINGS.dtf.personalCoef).replace('.', ',')}</span>
+      </label>
+      <div class="totals" id="qtyTotals">${qtyTotals(pi)}</div>
+      <p class="footnote">* Стоимость рассчитана для печати DTF, цена принта — вместе с прижимом и зависит от тиража. Стоимость других методов нанесения уточнит менеджер.</p>`;
   },
 
   contact() {
@@ -455,7 +487,8 @@ const views = {
           <div><dt>Изделие</dt><dd>${o.product}, ${o.color}</dd></div>
           <div><dt>Нанесение</dt><dd>${o.print.placementName}</dd></div>
           <div><dt>Размеры</dt><dd>${Object.entries(o.sizes).map(([s, n]) => `${s} × ${n}`).join(', ')}</dd></div>
-          <div><dt>Всего</dt><dd>${o.qty} шт · ${fmt(o.total)}${o.discount ? ` (скидка ${o.discount}%)` : ''}</dd></div>
+          <div><dt>Печать</dt><dd>DTF, ${o.print.format}${o.personal ? ', персонализация' : ''}</dd></div>
+          <div><dt>Всего</dt><dd>${o.qty} шт · ${fmt(o.total)}</dd></div>
         </dl>
         ${o.sendError ? `<p class="note note--warn">Не удалось отправить заказ на сервер: ${esc(o.sendError)}. Скачайте макет и свяжитесь с нами.</p>` : ''}
         <div class="done__actions">
@@ -467,10 +500,12 @@ const views = {
   },
 };
 
-function qtyTotals(pi, next) {
+function qtyTotals(pi) {
   return `<div><span>Всего</span><b>${pi.qty} шт</b></div>
-    <div><span>Цена за шт</span><b>${fmt(pi.unit)}${pi.percent ? ` <s>${fmt(pi.base)}</s>` : ''}</b></div>
-    ${next ? `<div class="totals__hint">Ещё ${next.qty - pi.qty} шт — и скидка ${next.percent}%</div>` : ''}`;
+    <div><span>Изделие</span><span>${fmt(pi.garment)}</span></div>
+    <div><span>Печать DTF${pi.format ? `, ${pi.format.name}` : ''}${state.personal ? ' ×' + String(SETTINGS.dtf.personalCoef).replace('.', ',') : ''}</span><span>${pi.format ? fmt(pi.print) : 'уточнит менеджер'}</span></div>
+    <div><span>Цена за шт</span><b>${fmt(pi.unit)}</b></div>
+    ${pi.next ? `<div class="totals__hint">От ${pi.next.qty} шт печать дешевле — ${fmt(pi.next.print)} за принт</div>` : ''}`;
 }
 
 function plural(n, one, few, many) {
@@ -515,8 +550,7 @@ function render() {
   body.innerHTML = state.order ? views.done() : views[STEPS[state.step].id]();
   bindStep();
 
-  const pi = priceInfo();
-  $('#totalPrice').textContent = !pi ? '—' : pi.qty ? fmt(pi.total) : `от ${fmt(pi.base)} / шт`;
+  footerPrice();
 
   const last = state.step === STEPS.length - 1;
   $('#btnBack').style.visibility = state.step > 0 && !state.order ? 'visible' : 'hidden';
@@ -577,6 +611,13 @@ function bindStep() {
 
   body.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', () => actions[b.dataset.action]()));
 
+  const personal = $('#personalBox');
+  if (personal) personal.addEventListener('change', () => {
+    state.personal = personal.checked;
+    $('#qtyTotals').innerHTML = qtyTotals(priceInfo());
+    footerPrice();
+  });
+
   const box = $('#confirmBox');
   if (box) box.addEventListener('change', () => { state.confirmed = box.checked; render(); });
 
@@ -601,22 +642,28 @@ function bindStep() {
 function setQty(size, n) {
   state.qty[size] = Math.max(0, Math.min(9999, n));
   if (!state.qty[size]) delete state.qty[size];
-  const pi = priceInfo();
-  const next = SETTINGS.discounts.slice().reverse().find((d) => d.qty > pi.qty);
-  $('#qtyTotals').innerHTML = qtyTotals(pi, next);
-  $('#totalPrice').textContent = pi.qty ? fmt(pi.total) : `от ${fmt(pi.base)} / шт`;
+  $('#qtyTotals').innerHTML = qtyTotals(priceInfo());
+  footerPrice();
   $('#btnNext').disabled = !canProceed();
 }
 
+function printNoteHtml() {
+  const st = printStats();
+  const f = printFormat();
+  const lowQ = st.dpi < SETTINGS.minDpi;
+  return `Размер печати ≈ ${st.wCm.toFixed(0)} × ${st.hCm.toFixed(0)} см · качество ${st.dpi} dpi<br>` +
+    `Формат DTF: <b>${formatLabel(f)}</b>${f ? ` — от ${fmt(f.prices[0])} за принт` : ''}` +
+    (lowQ ? '<br>Картинка маловата — на отпечатке может быть нечёткой. Уменьшите размер или загрузите файл побольше.' : '');
+}
+
 function updatePrintNote() {
-  // при движении ползунка обновляем только подсказку, а не весь экран
+  // при движении ползунка обновляем только подсказку и цену, а не весь экран
   const note = $('#printNote');
   const st = printStats();
   if (!note || !st) return;
-  const lowQ = st.dpi < SETTINGS.minDpi;
-  note.classList.toggle('note--warn', lowQ);
-  note.innerHTML = `Размер печати ≈ ${st.wCm.toFixed(0)} × ${st.hCm.toFixed(0)} см · качество ${st.dpi} dpi` +
-    (lowQ ? '<br>Картинка маловата — на отпечатке может быть нечёткой. Уменьшите размер или загрузите файл побольше.' : '');
+  note.classList.toggle('note--warn', st.dpi < SETTINGS.minDpi);
+  note.innerHTML = printNoteHtml();
+  footerPrice();
 }
 
 const actions = {
@@ -635,7 +682,7 @@ const actions = {
   restart() {
     Object.assign(state, {
       step: 0, maxStep: 0, productId: null, colorId: null, image: null, placement: 'chest',
-      place: { scale: 0.8, dx: 0, dy: 0 }, confirmed: false, qty: {}, order: null,
+      place: { scale: 0.8, dx: 0, dy: 0 }, confirmed: false, personal: false, qty: {}, order: null,
     });
     render();
   },
@@ -701,8 +748,10 @@ async function submitOrder() {
     colorHex: color().hex,
     sizes: { ...state.qty },
     qty: pi.qty,
+    garmentPrice: pi.garment,
+    printPrice: Math.round(pi.print),
+    personal: state.personal,
     unitPrice: Math.round(pi.unit),
-    discount: pi.percent,
     total: Math.round(pi.total),
     print: {
       placement: state.placement,
@@ -710,6 +759,8 @@ async function submitOrder() {
       widthCm: +st.wCm.toFixed(1),
       heightCm: +st.hCm.toFixed(1),
       dpi: st.dpi,
+      method: 'DTF',
+      format: formatLabel(pi.format),
       position: { ...state.place },
     },
     file: { name: state.image.name, width: state.image.w, height: state.image.h },
