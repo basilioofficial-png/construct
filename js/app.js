@@ -550,7 +550,13 @@ function goTo(i) {
 
 /* ---------- Главная функция перерисовки ---------- */
 
+const reachedSteps = new Set();
+
 function render() {
+  if (!state.order && !reachedSteps.has(state.step)) {
+    reachedSteps.add(state.step);
+    goal(`step_${state.step + 1}_${STEPS[state.step].id}`); // step_1_product … step_6_contact
+  }
   renderMockup();
   renderStepper();
 
@@ -685,8 +691,8 @@ const actions = {
   },
   fit() { resetPlace(1); render(); },
   reset() { resetPlace(); render(); },
-  download() { downloadPng(); },
-  downloadPdf() { downloadPdf(); },
+  download() { goal('png_download'); downloadPng(); },
+  downloadPdf() { goal('pdf_download'); downloadPdf(); },
   restart() {
     Object.assign(state, {
       step: 0, maxStep: 0, productId: null, colorId: null, image: null, placement: 'chest',
@@ -709,6 +715,7 @@ function loadFile(file) {
       // у некоторых SVG нет размеров — тогда считаем их 1000×1000
       const w = img.naturalWidth || 1000, h = img.naturalHeight || 1000;
       state.image = { src: reader.result, w, h, name: file.name, size: file.size };
+      goal('design_upload');
       resetPlace();
       state.confirmed = false;
       render();
@@ -797,6 +804,25 @@ async function submitOrder() {
   } catch (e) { /* хранилище недоступно — не страшно */ }
 
   state.order = order;
+  goal('order_submit', { order_price: order.total, currency: 'RUB', product: order.product });
+  // электронная коммерция Метрики (ecommerce: "dataLayer" в настройках счётчика)
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    ecommerce: {
+      currencyCode: 'RUB',
+      purchase: {
+        actionField: { id: order.id, revenue: order.total },
+        products: [{
+          id: order.productId,
+          name: order.product,
+          variant: order.color,
+          category: order.print.placementName,
+          price: order.unitPrice,
+          quantity: order.qty,
+        }],
+      },
+    },
+  });
   render();
 }
 

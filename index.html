@@ -552,6 +552,7 @@ img{max-width:100%}
   </div>
 </dialog>
 
+<script src="js/goals.js"></script>
 <script>
 // Форма консультации. Пока заявки никуда не отправляются: адрес для них
 // нужно указать в LEAD_ENDPOINT (как orderEndpoint в конструкторе).
@@ -570,6 +571,7 @@ form.addEventListener('submit', async (e) => {
       await fetch(LEAD_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
     } catch (e) { /* не получилось — всё равно благодарим, менеджер увидит заявку в другом канале */ }
   }
+  goal('lead_form_submit');
   form.innerHTML = '<div class="lead-ok">Спасибо! Мы перезвоним в течение 15 минут.</div>';
 });
 // Всплывающая форма «Тираж»
@@ -579,6 +581,7 @@ const tirageHtml = tirageForm.innerHTML; // чтобы после «Спасиб
 document.querySelectorAll('[data-modal="tirageModal"]').forEach((a) => a.addEventListener('click', (e) => {
   e.preventDefault();
   modal.showModal();
+  goal('tirage_open');
 }));
 modal.querySelector('[data-close]').addEventListener('click', () => modal.close());
 // клик по затемнённому фону вокруг окна — закрыть
@@ -601,6 +604,7 @@ tirageForm.addEventListener('submit', async (e) => {
       await fetch(LEAD_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'тираж', ...data }) });
     } catch (e) { /* см. комментарий у формы консультации */ }
   }
+  goal('tirage_submit', { qty: parseInt(data.qty, 10), layout: data.layout });
   tirageForm.dataset.sent = '1';
   tirageForm.innerHTML = '<div class="modal__done">Спасибо! Наш менеджер свяжется с вами в течение 15 минут.</div>';
 });
