@@ -38,6 +38,8 @@ def prepare(src, pid):
     bg = np.isin(labels, border[border > 0])
     mask = ndimage.binary_fill_holes(~bg)
     mask = ndimage.binary_opening(mask, iterations=2)
+    # срезаем 3 px по краю: там смешаны ткань и белый фон, на тёмных цветах это светлая кайма
+    mask = ndimage.binary_erosion(mask, iterations=3)
 
     # 2. Яркость ткани относительно «среднего» цвета изделия
     inner = ndimage.binary_erosion(mask, iterations=12)

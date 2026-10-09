@@ -124,9 +124,29 @@ const tintCache = {};   // 'tshirt|#FFFFFF' -> dataURL
 const shadeCache = {};  // 'tshirt' -> dataURL с тенями для принта
 const baseCache = {};   // 'tshirt' -> Promise<ImageData>
 
+/*
+ * На настоящем сайте фото берутся из img/products/ — по одному, когда нужны.
+ * Если index.html открыт двойным щелчком (адрес file://), браузер не даёт
+ * читать пиксели файлов, поэтому подгружаем js/blanks.js, где те же фото
+ * упакованы внутрь JS. Файл большой, поэтому только в этом случае.
+ */
+let blanksScript = null;
+function ensureBlanks() {
+  if (location.protocol !== 'file:' || typeof BLANK_IMAGES !== 'undefined') return Promise.resolve();
+  if (!blanksScript) {
+    blanksScript = new Promise((resolve) => {
+      const el = document.createElement('script');
+      el.src = 'js/blanks.js';
+      el.onload = el.onerror = resolve;
+      document.head.appendChild(el);
+    });
+  }
+  return blanksScript;
+}
+
 function loadBase(id, src) {
   if (!baseCache[id]) {
-    baseCache[id] = new Promise((resolve, reject) => {
+    baseCache[id] = ensureBlanks().then(() => new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
         const c = document.createElement('canvas');
@@ -138,7 +158,7 @@ function loadBase(id, src) {
       img.onerror = reject;
       // берём фото из js/blanks.js (работает и без сервера), иначе — файл
       img.src = (typeof BLANK_IMAGES !== 'undefined' && BLANK_IMAGES[id]) || src;
-    });
+    }));
   }
   return baseCache[id];
 }

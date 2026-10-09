@@ -43,9 +43,9 @@ const COLORS = {
  *   img     — (необязательно) своё фото для этого места, например вид сзади.
  *             Пока его нет, показывается фото спереди.
  *
- * Как добавить фото спины:
- *   1. python3 tools/prepare_blanks.py "Футболка спина.png" tshirt_back
- *   2. в places.back нужного изделия допишите  img: 'img/products/tshirt_back.png',
+ * Как поменять фото:
+ *   1. python3 tools/prepare_blanks.py "Футболка спина.png" tshirt_regular_back
+ *   2. пропишите путь в img нужного изделия или места (ниже, в SHAPE_…);
  *   3. поправьте print под новое фото (пунктир на шаге «Картинка»).
  */
 const PLACEMENTS = [
@@ -54,51 +54,78 @@ const PLACEMENTS = [
   { id: 'sleeve', name: 'На рукаве' },
 ];
 
-// Зоны печати для фото, которые уже есть (см. img/products/)
-const PLACES_TSHIRT = {
-  chest:  { print: { x: 125, y: 105, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
-  back:   { print: { x: 125, y: 105, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
-  sleeve: { print: { x: 50, y: 150, w: 36, h: 45 }, printCm: { w: 8, h: 10 } },
-};
-const PLACES_SWEATSHIRT = {
-  chest:  { print: { x: 125, y: 115, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
-  back:   { print: { x: 125, y: 115, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
-  sleeve: { print: { x: 70, y: 160, w: 34, h: 43 }, printCm: { w: 8, h: 10 } },
-};
-const PLACES_HOODIE = {
-  chest:  { print: { x: 125, y: 135, w: 150, h: 180 }, printCm: { w: 28, h: 34 } },
-  back:   { print: { x: 120, y: 120, w: 160, h: 200 }, printCm: { w: 32, h: 40 } },
-  sleeve: { print: { x: 68, y: 160, w: 36, h: 45 }, printCm: { w: 8, h: 10 } },
-};
+// Фото: перед (img) и спина (places.back.img). Рукав печатается на виде спереди.
+const IMG = (name) => `img/products/${name}.png`;
+const THUMB = (name) => `img/products/${name}-thumb.jpg`;
 
-const TSHIRT_IMG     = { img: 'img/products/tshirt.png',     thumb: 'img/products/tshirt-thumb.jpg' };
-const SWEATSHIRT_IMG = { img: 'img/products/sweatshirt.png', thumb: 'img/products/sweatshirt-thumb.jpg' };
-const HOODIE_IMG     = { img: 'img/products/hoodie.png',     thumb: 'img/products/hoodie-thumb.jpg' };
+const SHAPE_TSHIRT_REGULAR = {
+  img: IMG('tshirt_regular'), thumb: THUMB('tshirt_regular'),
+  places: {
+    chest:  { print: { x: 125, y: 100, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
+    back:   { img: IMG('tshirt_regular_back'), print: { x: 125, y: 90, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
+    sleeve: { print: { x: 52, y: 140, w: 34, h: 43 }, printCm: { w: 8, h: 10 } },
+  },
+};
+const SHAPE_TSHIRT_OVERSIZE = {
+  img: IMG('tshirt_oversize'), thumb: THUMB('tshirt_oversize'),
+  places: {
+    chest:  { print: { x: 125, y: 115, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
+    back:   { img: IMG('tshirt_oversize_back'), print: { x: 125, y: 95, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
+    sleeve: { print: { x: 55, y: 150, w: 34, h: 43 }, printCm: { w: 8, h: 10 } },
+  },
+};
+const SHAPE_LONGSLEEVE = {
+  img: IMG('longsleeve'), thumb: THUMB('longsleeve'),
+  places: {
+    chest:  { print: { x: 130, y: 95, w: 140, h: 190 }, printCm: { w: 28, h: 38 } },
+    back:   { img: IMG('longsleeve_back'), print: { x: 130, y: 85, w: 140, h: 190 }, printCm: { w: 28, h: 38 } },
+    sleeve: { print: { x: 84, y: 125, w: 22, h: 44 }, printCm: { w: 6, h: 12 } },
+  },
+};
+const SHAPE_SWEATSHIRT = {
+  img: IMG('sweatshirt'), thumb: THUMB('sweatshirt'),
+  places: {
+    chest:  { print: { x: 125, y: 115, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
+    back:   { img: IMG('sweatshirt_back'), print: { x: 125, y: 100, w: 150, h: 200 }, printCm: { w: 30, h: 40 } },
+    sleeve: { print: { x: 70, y: 160, w: 34, h: 43 }, printCm: { w: 8, h: 10 } },
+  },
+};
+const SHAPE_HOODIE = {
+  img: IMG('hoodie'), thumb: THUMB('hoodie'),
+  places: {
+    // между капюшоном и карманом-кенгуру
+    chest:  { print: { x: 130, y: 125, w: 140, h: 110 }, printCm: { w: 28, h: 22 } },
+    back:   { img: IMG('hoodie_back'), print: { x: 120, y: 165, w: 160, h: 190 }, printCm: { w: 32, h: 38 } },
+    sleeve: { print: { x: 80, y: 165, w: 28, h: 35 }, printCm: { w: 8, h: 10 } },
+  },
+};
+const SHAPE_ZIPHOODIE = {
+  img: IMG('ziphoodie'), thumb: THUMB('ziphoodie'),
+  places: {
+    // на груди молния, поэтому печать небольшая — слева на груди
+    chest:  { print: { x: 218, y: 125, w: 50, h: 50 }, printCm: { w: 10, h: 10 } },
+    back:   SHAPE_HOODIE.places.back,
+    sleeve: { print: { x: 80, y: 165, w: 28, h: 35 }, printCm: { w: 8, h: 10 } },
+  },
+};
 
 /*
- * Фото и зоны печати каждого изделия (ключ — id изделия из PRODUCTS).
- * Пока у лонгсливов стоит фото свитшота, у зип-худи — фото худи,
- * у оверсайз-футболки — фото обычной. Чтобы поставить своё фото:
- *   python3 tools/prepare_blanks.py "Лонгслив.png" longsleeve_regular
- * и замените строку на
- *   longsleeve_regular: { img: 'img/products/longsleeve_regular.png',
- *                         thumb: 'img/products/longsleeve_regular-thumb.jpg', places: ... },
+ * Какое фото у какого изделия (ключ — id изделия из PRODUCTS).
+ * Отдельных фото нет у лонгслива Free Fit и Oversize (стоит Regular)
+ * и у худи 100% хлопок и 80/20 (стоит худи 70/30).
+ * Новое фото готовится так:  python3 tools/prepare_blanks.py "Фото.png" имя
  */
 const SHAPES = {
-  tshirt_regular:      { ...TSHIRT_IMG,     places: PLACES_TSHIRT },
-  tshirt_oversize:     { ...TSHIRT_IMG,     places: PLACES_TSHIRT },
-  longsleeve_regular:  { ...SWEATSHIRT_IMG, places: PLACES_SWEATSHIRT },
-  longsleeve_freefit:  { ...SWEATSHIRT_IMG, places: PLACES_SWEATSHIRT },
-  longsleeve_oversize: { ...SWEATSHIRT_IMG, places: PLACES_SWEATSHIRT },
-  sweatshirt_regular:  { ...SWEATSHIRT_IMG, places: PLACES_SWEATSHIRT },
-  hoodie_7030:         { ...HOODIE_IMG,     places: PLACES_HOODIE },
-  hoodie_cotton:       { ...HOODIE_IMG,     places: PLACES_HOODIE },
-  hoodie_8020:         { ...HOODIE_IMG,     places: PLACES_HOODIE },
-  // на груди у зип-худи молния, поэтому печать — небольшая, слева на груди
-  ziphoodie:           { ...HOODIE_IMG,     places: {
-    ...PLACES_HOODIE,
-    chest: { print: { x: 215, y: 150, w: 50, h: 50 }, printCm: { w: 10, h: 10 } },
-  } },
+  tshirt_regular:      SHAPE_TSHIRT_REGULAR,
+  tshirt_oversize:     SHAPE_TSHIRT_OVERSIZE,
+  longsleeve_regular:  SHAPE_LONGSLEEVE,
+  longsleeve_freefit:  SHAPE_LONGSLEEVE,
+  longsleeve_oversize: SHAPE_LONGSLEEVE,
+  sweatshirt_regular:  SHAPE_SWEATSHIRT,
+  hoodie_7030:         SHAPE_HOODIE,
+  hoodie_cotton:       SHAPE_HOODIE,
+  hoodie_8020:         SHAPE_HOODIE,
+  ziphoodie:           SHAPE_ZIPHOODIE,
 };
 
 const APPAREL_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
