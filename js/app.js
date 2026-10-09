@@ -498,7 +498,8 @@ const views = {
           <div><dt>Печать</dt><dd>DTF, ${o.print.format}${o.personal ? ', персонализация' : ''}</dd></div>
           <div><dt>Всего</dt><dd>${o.qty} шт · ${fmt(o.total)}</dd></div>
         </dl>
-        ${o.sendError ? `<p class="note note--warn">Не удалось отправить заказ на сервер: ${esc(o.sendError)}. Скачайте макет и свяжитесь с нами.</p>` : ''}
+        ${o.sendError ? `<p class="note note--warn">Не удалось отправить заказ: ${esc(o.sendError)}. Скачайте PDF и <a href="https://t.me/pnhd_studio_bot" target="_blank" rel="noopener">напишите нам в Telegram</a> — оформим вручную.</p>` : ''}
+        ${!o.sendError && o.fileError ? `<p class="note note--warn">Заказ принят, но файл картинки не загрузился. Менеджер попросит прислать его ещё раз.</p>` : ''}
         <div class="done__actions">
           <button type="button" class="btn btn--primary" data-action="downloadPdf">Скачать PDF</button>
           <button type="button" class="btn btn--ghost" data-action="download">Скачать макет PNG</button>
@@ -782,15 +783,28 @@ async function submitOrder() {
     contact: { ...state.contact },
   };
 
-  if (SETTINGS.orderEndpoint) {
+  // Отправка в Битрикс: сначала файлы на Диск, затем сделка со ссылками на них.
+  // Если сайт открыт как файл (без сервера), отправку пропускаем.
+  if (SETTINGS.orderEndpoint && location.protocol !== 'file:') {
     try {
-      const preview = await mockupPng();
-      const res = await fetch(SETTINGS.orderEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...order, image: state.image.src, preview }),
-      });
-      if (!res.ok) throw new Error('ошибка ' + res.status);
+      btn.textContent = 'Загружаем файлы…';
+      const mockupSrc = await mockupPng();
+      const pdfBlob = await buildOrderPdf({ order, mockupSrc, designSrc: state.image.src });
+      const [original, mockup, pdf] = await Promise.all([
+        uploadFile(dataUrlToBlob(state.image.src), `${order.id}_файл-клиента_${state.image.name}`),
+        uploadFile(dataUrlToBlob(mockupSrc), `${order.id}_макет.png`),
+        uploadFile(pdfBlob, `${order.id}_заказ.pdf`),
+      ]);
+      const files = [
+        original ? { ...original, title: 'Файл клиента (для печати)' } : null,
+        mockup ? { ...mockup, title: 'Макет на изделии' } : null,
+        pdf ? { ...pdf, title: 'PDF заказа' } : null,
+      ].filter(Boolean);
+      if (!original) order.fileError = true;
+
+      btn.textContent = 'Отправляем заказ…';
+      const { contact, ...details } = order;
+      await sendLead({ type: 'order', contact, order: details, files });
     } catch (e) {
       order.sendError = e.message;
     }
@@ -804,7 +818,8 @@ async function submitOrder() {
   } catch (e) { /* хранилище недоступно — не страшно */ }
 
   state.order = order;
-  goal('order_submit', { order_price: order.total, currency: 'RUB', product: order.product });
+  if (order.sendError) goal('order_send_error');
+  else goal('order_submit', { order_price: order.total, currency: 'RUB', product: order.product });
   // электронная коммерция Метрики (ecommerce: "dataLayer" в настройках счётчика)
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({

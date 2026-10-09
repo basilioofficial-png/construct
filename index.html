@@ -515,6 +515,7 @@ img{max-width:100%}
       <div id="form" style="grid-column: 4 / span 7; grid-row: 1; margin-top: -1px; background: #F3F3F3; color: #111111; border-radius: 0; padding: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 24px; align-items: center">
         <img src="assets/598e2899c721e5b8da0196bb26fb86d4.png" alt="Худи Пинхэд" style="width: 100%; max-width: 260px; height: auto; mix-blend-mode: multiply">
         <form id="leadForm" novalidate style="display: flex; flex-direction: column; gap: 10px">
+          <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
           <div style="font-weight: 500; font-size: 14px">ЗАПОЛНИ ФОРМУ, МЫ СВЯЖЕМСЯ ДЛЯ КОНСУЛЬТАЦИИ</div>
           <label style="display: flex; flex-direction: column; gap: 2px; font-size: 10px; color: #555555">Твоё имя *<input type="text" name="name" required style="height: 32px; border: 1px solid #BBBBBB; border-radius: 0; padding: 0 10px; font: inherit; font-size: 13px"></label>
           <label style="display: flex; flex-direction: column; gap: 2px; font-size: 10px; color: #555555">Твой телефон *<input type="tel" name="phone" value="+7" required style="height: 32px; border: 1px solid #BBBBBB; border-radius: 0; padding: 0 10px; font: inherit; font-size: 13px"></label>
@@ -545,6 +546,7 @@ img{max-width:100%}
         <label><input type="radio" name="layout" value="да"> Да</label>
         <label><input type="radio" name="layout" value="нет"> Нет</label>
       </fieldset>
+      <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
       <label class="check"><input type="checkbox" name="consent" checked>Согласен с политикой конфиденциальности</label>
       <div class="lead-err" aria-live="polite"></div>
       <button type="submit" class="modal__btn">СВЯЗАТЬСЯ</button>
@@ -553,10 +555,10 @@ img{max-width:100%}
 </dialog>
 
 <script src="js/goals.js"></script>
+<script src="js/crm.js"></script>
 <script>
-// Форма консультации. Пока заявки никуда не отправляются: адрес для них
-// нужно указать в LEAD_ENDPOINT (как orderEndpoint в конструкторе).
-const LEAD_ENDPOINT = '';
+// Формы заявок → сделки в Битрикс24 (sendLead из js/crm.js, воронка «Студия»)
+const SEND_FAIL = 'Не удалось отправить заявку. Напишите нам в <a href="https://t.me/pnhd_studio_bot" target="_blank" rel="noopener">Telegram</a> или позвоните.';
 const form = document.getElementById('leadForm');
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -566,10 +568,14 @@ form.addEventListener('submit', async (e) => {
   if (!data.name || !data.name.trim()) return (err.textContent = 'Укажите имя');
   if ((data.phone || '').replace(/\D/g, '').length < 11) return (err.textContent = 'Проверьте номер телефона');
   if (!data.consent) return (err.textContent = 'Нужно согласие с политикой конфиденциальности');
-  if (LEAD_ENDPOINT) {
-    try {
-      await fetch(LEAD_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    } catch (e) { /* не получилось — всё равно благодарим, менеджер увидит заявку в другом канале */ }
+  const btn = form.querySelector('button');
+  btn.disabled = true; err.textContent = '';
+  try {
+    await sendLead({ type: 'consult', contact: { name: data.name, phone: data.phone }, website: data.website });
+  } catch (e) {
+    btn.disabled = false;
+    goal('lead_send_error');
+    return (err.innerHTML = SEND_FAIL);
   }
   goal('lead_form_submit');
   form.innerHTML = '<div class="lead-ok">Спасибо! Мы перезвоним в течение 15 минут.</div>';
@@ -599,10 +605,19 @@ tirageForm.addEventListener('submit', async (e) => {
   if (!(parseInt(data.qty, 10) >= 1)) return fail('Укажите количество изделий', 'qty');
   if (!data.layout) return fail('Отметьте, есть ли у вас макет', 'layout');
   if (!data.consent) return fail('Нужно согласие с политикой конфиденциальности', 'consent');
-  if (LEAD_ENDPOINT) {
-    try {
-      await fetch(LEAD_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'тираж', ...data }) });
-    } catch (e) { /* см. комментарий у формы консультации */ }
+  const btn = tirageForm.querySelector('button[type=submit]');
+  btn.disabled = true; err.textContent = '';
+  try {
+    await sendLead({
+      type: 'tirage',
+      contact: { name: data.name, phone: data.phone },
+      tirage: { qty: parseInt(data.qty, 10), layout: data.layout },
+      website: data.website,
+    });
+  } catch (e) {
+    btn.disabled = false;
+    goal('lead_send_error');
+    return (err.innerHTML = SEND_FAIL);
   }
   goal('tirage_submit', { qty: parseInt(data.qty, 10), layout: data.layout });
   tirageForm.dataset.sent = '1';
