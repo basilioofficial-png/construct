@@ -127,6 +127,14 @@ function imageBox() {
   return { x, y, w, h };
 }
 
+// Начальное положение картинки: по центру по горизонтали, у верхнего края зоны —
+// так обычно печатают на груди и спине (зоны высокие, до низа изделия)
+function resetPlace(scale = 0.8) {
+  state.place = { scale, dx: 0, dy: 0 };
+  const s = shape(), box = imageBox();
+  if (s && box) state.place.dy = -(s.print.h - box.h) / 2;
+}
+
 // Реальный размер отпечатка в сантиметрах и качество (DPI)
 function printStats() {
   const s = shape();
@@ -570,7 +578,7 @@ function bindStep() {
     const p = product();
     if (!p.colors.includes(state.colorId)) state.colorId = null;
     state.qty = {};
-    state.place = { scale: 0.8, dx: 0, dy: 0 };
+    resetPlace();
     state.confirmed = false;
     render();
   }));
@@ -584,7 +592,7 @@ function bindStep() {
   body.querySelectorAll('[data-placement]').forEach((b) => b.addEventListener('click', () => {
     state.placement = b.dataset.placement;
     // у каждого места своя зона печати — начинаем расположение заново
-    state.place = { scale: 0.8, dx: 0, dy: 0 };
+    resetPlace();
     state.confirmed = false;
     render();
   }));
@@ -675,8 +683,8 @@ const actions = {
     state.place.dy = -(s.print.h - box.h) / 2;
     render();
   },
-  fit() { state.place = { scale: 1, dx: 0, dy: 0 }; render(); },
-  reset() { state.place = { scale: 0.8, dx: 0, dy: 0 }; render(); },
+  fit() { resetPlace(1); render(); },
+  reset() { resetPlace(); render(); },
   download() { downloadPng(); },
   downloadPdf() { downloadPdf(); },
   restart() {
@@ -701,7 +709,7 @@ function loadFile(file) {
       // у некоторых SVG нет размеров — тогда считаем их 1000×1000
       const w = img.naturalWidth || 1000, h = img.naturalHeight || 1000;
       state.image = { src: reader.result, w, h, name: file.name, size: file.size };
-      state.place = { scale: 0.8, dx: 0, dy: 0 };
+      resetPlace();
       state.confirmed = false;
       render();
     };
