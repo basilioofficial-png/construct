@@ -18,8 +18,8 @@ jobs:
 
       - name: Upload site
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.YC_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.YC_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ vars.YC_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ vars.YC_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ru-central1
           BUCKET: temp-studio
         run: |
